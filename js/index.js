@@ -123,6 +123,7 @@ function getGeoJson() {
             let html = '';
             html += `<p>Percentage of registered voters: ${foundRace.percentageOfRegisteredVoters}%</p>`;
             html += `<p>Percentage of votes: ${foundRace.percentageOfVotes}%</p>`;
+            html += '<hr>'
             foundRace.votes.sort((a, b) => {
                 return a.votes < b.votes;
             });
@@ -131,7 +132,7 @@ function getGeoJson() {
                 html += `<p>${item.item}: ${item.votes} (${((item.votes / foundRace.total_votes) * 100).toFixed(2)}%)</p>`;
             }
             let popup = L.popup()
-                .setContent(`<div><p>${feature.properties.neighborhood}</p>${html}</div>`);
+                .setContent(`<div><p>${feature.properties.neighborhood}</p><hr>${html}</div>`);
             layer.bindPopup(popup);
         },
         style: function(feature) {
@@ -189,7 +190,6 @@ function calculateRegisteredVoterPercentages() {
         }
         const percentageOfRegisteredVoters = ((foundRace.registered_voters / registeredVoters) * 100).toFixed(2);
         foundRace.percentageOfRegisteredVoters = percentageOfRegisteredVoters;
-        console.log(`${result.neighborhood},${percentageOfRegisteredVoters}`);
     });
 }
 

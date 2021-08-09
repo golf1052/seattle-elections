@@ -2,6 +2,10 @@ html, body {
     height: 100%;
 }
 
+p {
+    margin: 4px !important;
+}
+
 #map {
     height: 100%;
 }
