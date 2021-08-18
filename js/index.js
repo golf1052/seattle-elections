@@ -120,7 +120,9 @@ function getGeoJson() {
             if (foundRace === undefined) {
                 return;
             }
+            const voterTurnout = ((foundRace.total_votes / foundRace.registered_voters) * 100).toFixed(2);
             let html = '';
+            html += `<p>Voter turnout: ${voterTurnout}%<p>`
             html += `<p>Percentage of registered voters: ${foundRace.percentageOfRegisteredVoters}%</p>`;
             html += `<p>Percentage of votes: ${foundRace.percentageOfVotes}%</p>`;
             html += '<hr>'
