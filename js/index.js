@@ -44,6 +44,14 @@ document.getElementById('yearDropdown').addEventListener('change', function(e) {
     primaryOption.value = 'primary';
     primaryOption.text = 'Primary';
     electionDropdown.appendChild(primaryOption);
+
+    if (selectedYear === '2021') {
+        const estimatedOption = document.createElement('option');
+        estimatedOption.value = 'estimated';
+        estimatedOption.text = 'Estimated';
+        electionDropdown.appendChild(estimatedOption);
+    }
+
     if (selectedYear === '2017' ||
         selectedYear === '2018' ||
         selectedYear === '2019' ||
@@ -89,6 +97,8 @@ document.getElementById('electionDropdown').addEventListener('change', function(
     } else if (selectedYear === '2021') {
         if (selectedElection === 'primary') {
             selectedResults = results2021Primary;
+        } else if (selectedElection === 'estimated') {
+            selectedResults = results2021Estimated;
         }
     }
 
