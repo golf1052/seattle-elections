@@ -45,11 +45,19 @@ document.getElementById('yearDropdown').addEventListener('change', function(e) {
     primaryOption.text = 'Primary';
     electionDropdown.appendChild(primaryOption);
 
-    if (selectedYear === '2021') {
+    if (selectedYear === '2017' ||
+        selectedYear === '2021') {
         const estimatedOption = document.createElement('option');
         estimatedOption.value = 'estimated';
         estimatedOption.text = 'Estimated';
         electionDropdown.appendChild(estimatedOption);
+    }
+
+    if (selectedYear === '2017') {
+        const errorOption = document.createElement('option');
+        errorOption.value = 'error';
+        errorOption.text = 'Error';
+        electionDropdown.appendChild(errorOption);
     }
 
     if (selectedYear === '2017' ||
@@ -73,6 +81,10 @@ document.getElementById('electionDropdown').addEventListener('change', function(
     if (selectedYear === '2017') {
         if (selectedElection === 'primary') {
             selectedResults = results2017Primary;
+        } else if (selectedElection === 'estimated') {
+            selectedResults = results2017Estimated;
+        } else if (selectedElection === 'error') {
+            selectedResults = results2017Error;
         } else if (selectedElection === 'general') {
             selectedResults = results2017General;
         }
@@ -115,8 +127,11 @@ document.getElementById('raceDropdown').addEventListener('change', function(e) {
     if (geoJsonLayer != null) {
         geoJsonLayer.removeFrom(map);
     }
-    calculateRegisteredVoterPercentages();
-    calculateVotedVoterPercentages();
+
+    if (selectedElection !== 'error') {
+        calculateRegisteredVoterPercentages();
+        calculateVotedVoterPercentages();
+    }
     geoJsonLayer = getGeoJson();
     geoJsonLayer.addTo(map);
 });
@@ -124,59 +139,130 @@ document.getElementById('raceDropdown').addEventListener('change', function(e) {
 function getGeoJson() {
     return L.geoJSON(features, {
         onEachFeature: function (feature, layer) {
-            const neighborhoodName = feature.properties.neighborhood;
-            let results = getNeighborhoodResultsFromName(neighborhoodName);
-            let foundRace = results.races.find(e => { return e.name === selectedRace; });
-            if (foundRace === undefined) {
-                return;
-            }
-            const voterTurnout = ((foundRace.total_votes / foundRace.registered_voters) * 100).toFixed(2);
-            let html = '';
-            html += `<p>Voter turnout: ${voterTurnout}%<p>`
-            html += `<p>Percentage of registered voters: ${foundRace.percentageOfRegisteredVoters}%</p>`;
-            html += `<p>Percentage of votes: ${foundRace.percentageOfVotes}%</p>`;
-            html += '<hr>'
-            foundRace.votes.sort((a, b) => {
-                return a.votes < b.votes;
-            });
-            for (let i = 0; i < foundRace.votes.length; i++) {
-                let item = foundRace.votes[i];
-                html += `<p>${item.item}: ${item.votes} (${((item.votes / foundRace.total_votes) * 100).toFixed(2)}%)</p>`;
-            }
-            let popup = L.popup()
-                .setContent(`<div><p>${feature.properties.neighborhood}</p><hr>${html}</div>`);
-            layer.bindPopup(popup);
+            if (selectedElection === 'error') {
+                createErrorPopup(feature, layer);
+            } else {
+                createPopup(feature, layer);
+            }  
         },
         style: function(feature) {
-            const neighborhoodName = feature.properties.neighborhood;
-            const results = getNeighborhoodResultsFromName(neighborhoodName);
-            const foundRace = results.races.find(e => { return e.name === selectedRace; });
-            if (foundRace === undefined) {
-                return;
+            if (selectedElection === 'error') {
+                return createErrorStyle(feature);
+            } else {
+                return createStyle(feature);
             }
-            const total = foundRace.total_votes;
-            let topCandidate = null;
-            for (let i = 0; i < foundRace.votes.length; i++) {
-                const item = foundRace.votes[i];
-                if (item.item == 'Write-in') {
-                    continue;
-                }
-                if (topCandidate === null || item.votes > topCandidate.votes) {
-                    topCandidate = {
-                        name: item.item,
-                        votes: item.votes
-                    };
-                }
-            }
-            return {
-                fillColor: getUnusedColor(topCandidate.name),
-                fillOpacity: topCandidate.votes / total,
-                weight: 2,
-                dashArray: 5,
-                color: '#000'
-            };
         }
     });
+}
+
+function createPopup(feature, layer) {
+    const neighborhoodName = feature.properties.neighborhood;
+    let results = getNeighborhoodResultsFromName(neighborhoodName);
+    let foundRace = results.races.find(e => { return e.name === selectedRace; });
+    if (foundRace === undefined) {
+        return;
+    }
+    const voterTurnout = ((foundRace.total_votes / foundRace.registered_voters) * 100).toFixed(2);
+    let html = '';
+    html += `<p>Voter turnout: ${voterTurnout}%<p>`
+    html += `<p>Percentage of registered voters: ${foundRace.percentageOfRegisteredVoters}%</p>`;
+    html += `<p>Percentage of votes: ${foundRace.percentageOfVotes}%</p>`;
+    html += '<hr>'
+    foundRace.votes.sort((a, b) => {
+        return a.votes < b.votes;
+    });
+    for (let i = 0; i < foundRace.votes.length; i++) {
+        let item = foundRace.votes[i];
+        html += `<p>${item.item}: ${item.votes} (${((item.votes / foundRace.total_votes) * 100).toFixed(2)}%)</p>`;
+    }
+    let popup = L.popup()
+        .setContent(`<div><p>${feature.properties.neighborhood}</p><hr>${html}</div>`);
+    layer.bindPopup(popup);
+}
+
+function createStyle(feature) {
+    const neighborhoodName = feature.properties.neighborhood;
+    const results = getNeighborhoodResultsFromName(neighborhoodName);
+    const foundRace = results.races.find(e => { return e.name === selectedRace; });
+    if (foundRace === undefined) {
+        return;
+    }
+    const total = foundRace.total_votes;
+    let topCandidate = null;
+    for (let i = 0; i < foundRace.votes.length; i++) {
+        const item = foundRace.votes[i];
+        if (item.item == 'Write-in') {
+            continue;
+        }
+        if (topCandidate === null || item.votes > topCandidate.votes) {
+            topCandidate = {
+                name: item.item,
+                votes: item.votes
+            };
+        }
+    }
+    return {
+        fillColor: getUnusedColor(topCandidate.name),
+        fillOpacity: topCandidate.votes / total,
+        weight: 2,
+        dashArray: 5,
+        color: '#000'
+    };
+}
+
+function createErrorPopup(feature, layer) {
+    const neighborhoodName = feature.properties.neighborhood;
+    let results = getNeighborhoodResultsFromName(neighborhoodName);
+    let foundRace = results.races.find(e => { return e.name === selectedRace; });
+    if (foundRace === undefined) {
+        return;
+    }
+
+    let html = '';
+    html += `<p>Registered voters error: ${(foundRace.registered_voters * 100).toFixed(2)}%</p>`;
+    html += `<p>Votes error: ${(foundRace.total_votes * 100).toFixed(2)}%</p>`;
+    html += '<hr>'
+
+    foundRace.votes.sort((a, b) => {
+        return a.votes < b.votes;
+    });
+    for (let i = 0; i < foundRace.votes.length; i++) {
+        let item = foundRace.votes[i];
+        html += `<p>${item.item} error: ${(item.votes * 100).toFixed(2)}%</p>`;
+    }
+    let popup = L.popup()
+        .setContent(`<div><p>${feature.properties.neighborhood}</p><hr>${html}</div>`);
+    layer.bindPopup(popup);
+}
+
+function createErrorStyle(feature) {
+    const neighborhoodName = feature.properties.neighborhood;
+    const results = getNeighborhoodResultsFromName(neighborhoodName);
+    const foundRace = results.races.find(e => { return e.name === selectedRace; });
+    if (foundRace === undefined) {
+        return;
+    }
+    const total = foundRace.total_votes;
+    let topCandidate = null;
+    for (let i = 0; i < foundRace.votes.length; i++) {
+        const item = foundRace.votes[i];
+        if (item.item == 'Write-in') {
+            continue;
+        }
+        if (topCandidate === null || Math.abs(item.votes) > Math.abs(topCandidate.votes)) {
+            topCandidate = {
+                name: item.item,
+                votes: item.votes
+            };
+        }
+    }
+    return {
+        fillColor: 'red',
+        fillOpacity: Math.abs(topCandidate.votes),
+        weight: 2,
+        dashArray: 5,
+        color: '#000'
+    };
 }
 
 function getNeighborhoodResultsFromName(name) {
