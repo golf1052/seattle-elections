@@ -53,7 +53,8 @@ document.getElementById('yearDropdown').addEventListener('change', function(e) {
         electionDropdown.appendChild(estimatedOption);
     }
 
-    if (selectedYear === '2017') {
+    if (selectedYear === '2017' ||
+        selectedYear === '2021') {
         const errorOption = document.createElement('option');
         errorOption.value = 'error';
         errorOption.text = 'Error';
@@ -63,11 +64,19 @@ document.getElementById('yearDropdown').addEventListener('change', function(e) {
     if (selectedYear === '2017' ||
         selectedYear === '2018' ||
         selectedYear === '2019' ||
-        selectedYear === '2020') {
+        selectedYear === '2020' ||
+        selectedYear === '2021') {
         const generalOption = document.createElement('option');
         generalOption.value = 'general';
         generalOption.text = 'General';
         electionDropdown.appendChild(generalOption);
+    }
+
+    if (selectedYear === '2021') {
+        const recallOption = document.createElement('option');
+        recallOption.value = 'recall';
+        recallOption.text = 'Recall';
+        electionDropdown.appendChild(recallOption);
     }
 });
 
@@ -111,6 +120,12 @@ document.getElementById('electionDropdown').addEventListener('change', function(
             selectedResults = results2021Primary;
         } else if (selectedElection === 'estimated') {
             selectedResults = results2021Estimated;
+        } else if (selectedElection === 'general') {
+            selectedResults = results2021General;
+        } else if (selectedElection === 'error') {
+            selectedResults = results2021Error;
+        } else if (selectedElection === 'recall') {
+            selectedResults = results2021Recall;
         }
     }
 
